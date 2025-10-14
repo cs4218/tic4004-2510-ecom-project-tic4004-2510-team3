@@ -1,10 +1,15 @@
-node_modules
+# Dependencies
+node_modules/
+
+# Playwright
 /test-results/
 /playwright-report/
 /blob-report/
 /playwright/.cache/
-/coverage
-.env
-
-# Playwright
 /playwright/.auth/
+
+# Coverage
+/coverage/
+
+# Environment
+.env
