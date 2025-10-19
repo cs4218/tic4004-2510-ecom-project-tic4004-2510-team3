@@ -4,7 +4,4 @@ node_modules
 /playwright-report/
 /blob-report/
 /playwright/.cache/
-<<<<<<< HEAD
 .env
-=======
->>>>>>> parent of b39172a (Update .env and .gitignore file)
