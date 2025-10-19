@@ -17,14 +17,18 @@ export default {
   },
 
   // ignore all node_modules except styleMock (needed for css imports)
-  transformIgnorePatterns: ["/node_modules/(?!(styleMock\\.js)$)"],
+  transformIgnorePatterns: ["/node_modules/(?!(styleMocka\\.js)$)"],
 
   // only run these tests
-  testMatch: ["<rootDir>/client/src/pages/Auth/*.test.js"],
+  testMatch: ["<rootDir>/client/src/pages/Auth/*.test.js", 
+    "<rootDir>/client/src/pages/admin/*.test.js",
+  "<rootDir>/client/src/pages/user/*.test.js"],
 
   // jest code coverage
   collectCoverage: true,
-  collectCoverageFrom: ["client/src/pages/Auth/**"],
+  collectCoverageFrom: ["client/src/pages/Auth/**", 
+    "client/src/pages/admin/**", 
+    "client/src/pages/user/**"],
   coverageThreshold: {
     global: {
       lines: 100,
