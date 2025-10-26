@@ -1,0 +1,70 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+  namespace: ecommerce-secure
+  labels:
+    app: backend
+    security: high
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: backend
+  template:
+    metadata:
+      labels:
+        app: backend
+        security: high
+    spec:
+      # SECURITY: Don't run as root
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        fsGroup: 2000
+      containers:
+      - name: backend
+        image: ecommerce-backend:latest
+        # SECURITY: Container-level security
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+        resources:
+          # SECURITY: Prevent resource attacks
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "500m"
+        env:
+        - name: MONGO_URL
+          valueFrom:
+            secretKeyRef:
+              name: app-secrets
+              key: mongo-url
+        - name: JWT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: app-secrets
+              key: jwt-secret
+        - name: NODE_ENV
+          value: "production"
+        ports:
+        - containerPort: 6060
+        # SECURITY: Health checks
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 6060
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 6060
+          initialDelaySeconds: 5
+          periodSeconds: 5
