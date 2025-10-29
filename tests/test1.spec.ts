@@ -108,7 +108,7 @@ test('user can view categories page', async ({ page }) => {
   expect(isCategoriesPage).toBeTruthy();
 });
 
-// Test 8: Product details page
+// Test 8: Product details page - FIXED
 test('user can view product details', async ({ page }) => {
   await page.goto('http://localhost:3000/');
   await page.waitForSelector('.card', { timeout: 10000 });
@@ -118,7 +118,10 @@ test('user can view product details', async ({ page }) => {
   
   await page.waitForSelector('h1:has-text("Product Details")', { timeout: 10000 });
   await expect(page.getByRole('heading', { name: 'Product Details' })).toBeVisible();
-  await expect(page.locator('img')).toBeVisible();
+  
+  // FIX: Use specific selector for main product image
+  await expect(page.locator('main img').first()).toBeVisible();
+  // OR alternative fix: await expect(page.getByRole('img').first()).toBeVisible();
 });
 
 // Test 9: Navigation and responsive design
