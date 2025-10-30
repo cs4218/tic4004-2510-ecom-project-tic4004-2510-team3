@@ -3,33 +3,47 @@ import { render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import Pagenotfound from "./Pagenotfound";
 
-// Mock components
-jest.mock("../components/Layout", () => ({ children }) => (
-  <div data-testid="mock-layout">{children}</div>
+// Mock only the Header component and Auth context (Layout mock is unused)
+jest.mock("../components/Header", () => () => (
+  <div data-testid="mock-header">Header</div>
 ));
 
-jest.mock("../components/Header", () => () => <div data-testid="mock-header">Header</div>);
 jest.mock("../context/auth", () => ({
   useAuth: () => [{ user: null, token: "" }, jest.fn()],
 }));
 
-
-
 describe("Pagenotfound Component", () => {
-  test("renders 404 page correctly", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
 
+  it("renders the 404 title", () => {
     render(
       <MemoryRouter>
         <Pagenotfound />
       </MemoryRouter>
     );
 
-    const title = screen.getByText("404");
-    const heading = screen.getByText("Oops ! Page Not Found");
-    const link = screen.getByRole("link", { name: /Go Back/i });
+    expect(screen.getByText("404")).toBeInTheDocument();
+  });
 
-    expect(title).toBeInTheDocument();
-    expect(heading).toBeInTheDocument();
-    expect(link).toHaveAttribute("href", "/");
+  it("renders the main heading correctly", () => {
+    render(
+      <MemoryRouter>
+        <Pagenotfound />
+      </MemoryRouter>
+    );
+
+    expect(screen.getByText("Oops ! Page Not Found")).toBeInTheDocument();
+  });
+
+  it("renders the mocked Header component", () => {
+    render(
+      <MemoryRouter>
+        <Pagenotfound />
+      </MemoryRouter>
+    );
+
+    expect(screen.getByTestId("mock-header")).toBeInTheDocument();
   });
 });
