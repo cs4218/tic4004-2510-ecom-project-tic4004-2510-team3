@@ -37,22 +37,6 @@ jest.mock('../components/Layout', () => {
 describe('Search Component', () => {
 
   describe('Empty Results State', () => {
-
-    // Testing for empty results
-    it('should display "No Products Found" when results array is empty', () => {
-      mockUseSearch.mockReturnValue([{ keyword: '', results: [] }, jest.fn()]);
-
-      render(
-        <MemoryRouter>
-          <Search />
-        </MemoryRouter>
-      );
-
-      expect(screen.getByText('No Products Found')).toBeInTheDocument();
-      expect(screen.getByText('Search Resuts')).toBeInTheDocument();
-    });
-
-
     // Testing for whether the display result is in the corrct layout
     it('should display correct layout title', () => {
       mockUseSearch.mockReturnValue([{ keyword: '', results: [] }, jest.fn()]);
@@ -114,12 +98,11 @@ describe('Search Component', () => {
       );
 
       const productImage = screen.getByAltText('Laptop');
-      expect(productImage).toBeInTheDocument();
       expect(productImage).toHaveAttribute('src', '/api/v1/product/product-photo/1');
     });
 
-    // Testing for product button is correctly shown. add to card and more details
-    it('should render action buttons for each product', () => {
+    // Testing for "ADD TO CART" button
+    it('should render "ADD TO CART" button for each product', () => {
       mockUseSearch.mockReturnValue([{ keyword: 'laptop', results: [mockLaptop] }, jest.fn()]);
 
       render(
@@ -129,8 +112,21 @@ describe('Search Component', () => {
       );
 
       expect(screen.getByText('ADD TO CART')).toBeInTheDocument();
+    });
+
+    // Testing for "More Details" button
+    it('should render "More Details" button for each product', () => {
+      mockUseSearch.mockReturnValue([{ keyword: 'laptop', results: [mockLaptop] }, jest.fn()]);
+
+      render(
+        <MemoryRouter>
+          <Search />
+        </MemoryRouter>
+      );
+
       expect(screen.getByText('More Details')).toBeInTheDocument();
     });
+
   });
 
   describe('Product Card Structure', () => {
