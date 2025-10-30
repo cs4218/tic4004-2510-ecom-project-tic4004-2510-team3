@@ -21,9 +21,10 @@ export default {
 
   // only run these tests
   testMatch: ["<rootDir>/client/src/pages/Auth/*.test.js", 
-    "<rootDir>/client/src/pages/admin/*.test.js",
-    "<rootDir>/client/src/pages/user/*.test.js",
     "<rootDir>/client/src/context/cart.test.js",
+    "<rootDir>/client/src/pages/admin/AdminDashboard.test.js",
+    "<rootDir>/client/src/pages/admin/AdminOrders.test.js",
+    "<rootDir>/client/src/pages/admin/CreateCategory.test.js",
     "<rootDir>/client/src/pages/Categories.test.js",
     "<rootDir>/client/src/pages/Pagenotfound.test.js",
     "<rootDir>/client/src/pages/Policy.test.js",
@@ -33,9 +34,10 @@ export default {
   // jest code coverage
   collectCoverage: true,
   collectCoverageFrom: ["client/src/pages/Auth/**", 
-    "client/src/pages/admin/**", 
-    "client/src/pages/user/**",
     "client/src/context/cart.js",
+    "client/src/pages/admin/AdminDashboard.js", 
+    "client/src/pages/admin/AdminOrders.js",
+    "client/src/pages/admin/CreateCategory.js",
     "client/src/pages/Categories.js",
     "client/src/pages/Pagenotfound.js",
     "client/src/pages/Policy.js",

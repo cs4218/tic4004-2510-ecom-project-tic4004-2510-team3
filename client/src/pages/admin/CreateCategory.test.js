@@ -1,476 +1,583 @@
 import React from 'react';
-import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import '@testing-library/jest-dom';
+import CreateCategory from './CreateCategory';
 import axios from 'axios';
 import toast from 'react-hot-toast';
-import CreateCategory from './CreateCategory';
-
-// Mock axios
-jest.mock('axios', () => ({
-  get: jest.fn(),
-  post: jest.fn(),
-  put: jest.fn(),
-  delete: jest.fn(),
-}));
 
 // Mock dependencies
-jest.mock('react-hot-toast', () => ({
-  success: jest.fn(),
-  error: jest.fn(),
-}));
-
-// Mock child components
-jest.mock('../../components/Layout', () => {
-  return function MockLayout({ children, title }) {
-    return (
-      <div data-testid="layout">
-        <h1>{title}</h1>
-        {children}
-      </div>
-    );
-  };
-});
-
-jest.mock('../../components/AdminMenu', () => {
-  return function MockAdminMenu() {
-    return <div data-testid="admin-menu">Admin Menu</div>;
-  };
-});
-
-jest.mock('../../components/Form/CategoryForm', () => {
-  return function MockCategoryForm({ handleSubmit, value, setValue }) {
-    return (
-      <form onSubmit={handleSubmit} data-testid="category-form">
-        <input
-          type="text"
-          value={value}
-          onChange={(e) => setValue(e.target.value)}
-          placeholder="Enter new category"
-          data-testid="category-input"
-        />
-        <button type="submit" data-testid="submit-button">
-          Submit
-        </button>
-      </form>
-    );
-  };
-});
-
-// Mock Antd Modal
+jest.mock('axios');
+jest.mock('react-hot-toast');
+jest.mock('./../../components/Layout', () => ({ children, title }) => (
+  <div data-testid="layout" data-title={title}>{children}</div>
+));
+jest.mock('./../../components/AdminMenu', () => () => (
+  <div data-testid="admin-menu">AdminMenu</div>
+));
+jest.mock('../../components/Form/CategoryForm', () => ({ handleSubmit, value, setValue }) => (
+  <form onSubmit={handleSubmit} data-testid="category-form">
+    <input
+      data-testid="category-input"
+      value={value}
+      onChange={(e) => setValue(e.target.value)}
+    />
+    <button type="submit">Submit</button>
+  </form>
+));
 jest.mock('antd', () => ({
-  Modal: ({ children, visible, onCancel, footer }) => {
-    if (!visible) return null;
-    return (
+  Modal: ({ children, visible, onCancel, footer }) => 
+    visible ? (
       <div data-testid="modal">
-        <button onClick={onCancel} data-testid="modal-cancel">Cancel</button>
+        <button data-testid="modal-cancel" onClick={onCancel}>Cancel</button>
         {children}
-        {footer}
       </div>
-    );
-  },
+    ) : null
 }));
 
 describe('CreateCategory Component', () => {
-  const mockCategories = [
-    { _id: '1', name: 'Electronics' },
-    { _id: '2', name: 'Clothing' },
-    { _id: '3', name: 'Books' },
-  ];
-
+  
   beforeEach(() => {
     jest.clearAllMocks();
-    // Mock successful API responses by default
-    axios.get.mockResolvedValue({
-      data: { success: true, category: mockCategories }
-    });
-    axios.post.mockResolvedValue({
-      data: { success: true, message: 'Category created successfully' }
-    });
-    axios.put.mockResolvedValue({
-      data: { success: true, message: 'Category updated successfully' }
-    });
-    axios.delete.mockResolvedValue({
-      data: { success: true, message: 'Category deleted successfully' }
-    });
   });
 
-  describe('Component Rendering', () => {
-    test('renders CreateCategory component with correct title', async () => {
-      await act(async () => {
-        render(<CreateCategory />);
-      });
+  // ================== OUTPUT-BASED TESTING ==================
+  // Testing rendered output based on component state
+  
+  describe('Output-Based Tests - Initial Render', () => {
+    
+    test('should render layout with correct title', async () => {
+      axios.get.mockResolvedValue({ data: { success: true, category: [] } });
+      
+      render(<CreateCategory />);
+      
+      const layout = screen.getByTestId('layout');
+      expect(layout).toHaveAttribute('data-title', 'Dashboard - Create Category');
+    });
 
-      expect(screen.getByText('Dashboard - Create Category')).toBeInTheDocument();
-      expect(screen.getByText('Manage Category')).toBeInTheDocument();
+    test('should render admin menu', async () => {
+      axios.get.mockResolvedValue({ data: { success: true, category: [] } });
+      
+      render(<CreateCategory />);
+      
       expect(screen.getByTestId('admin-menu')).toBeInTheDocument();
     });
 
-    test('renders category form', async () => {
-      await act(async () => {
-        render(<CreateCategory />);
-      });
+    test('should render "Manage Category" heading', async () => {
+      axios.get.mockResolvedValue({ data: { success: true, category: [] } });
+      
+      render(<CreateCategory />);
+      
+      expect(screen.getByText('Manage Category')).toBeInTheDocument();
+    });
 
+    test('should render category form for creating new category', async () => {
+      axios.get.mockResolvedValue({ data: { success: true, category: [] } });
+      
+      render(<CreateCategory />);
+      
       expect(screen.getByTestId('category-form')).toBeInTheDocument();
-      expect(screen.getByTestId('category-input')).toBeInTheDocument();
-      expect(screen.getByTestId('submit-button')).toBeInTheDocument();
     });
 
-    test('renders categories table with headers', async () => {
-      await act(async () => {
-        render(<CreateCategory />);
+    test('should render empty table when no categories exist', async () => {
+      axios.get.mockResolvedValue({ data: { success: true, category: [] } });
+      
+      render(<CreateCategory />);
+      
+      await waitFor(() => {
+        const table = screen.getByRole('table');
+        expect(table).toBeInTheDocument();
+        expect(screen.getByText('Name')).toBeInTheDocument();
+        expect(screen.getByText('Actions')).toBeInTheDocument();
       });
-
-      expect(screen.getByText('Name')).toBeInTheDocument();
-      expect(screen.getByText('Actions')).toBeInTheDocument();
     });
-  });
 
-  describe('Category Loading', () => {
-    test('loads and displays categories on component mount', async () => {
-      await act(async () => {
-        render(<CreateCategory />);
-      });
-
-      expect(axios.get).toHaveBeenCalledWith('/api/v1/category/get-category');
+    test('should render categories in table when categories exist', async () => {
+      const mockCategories = [
+        { _id: '1', name: 'Electronics' },
+        { _id: '2', name: 'Clothing' }
+      ];
+      axios.get.mockResolvedValue({ data: { success: true, category: mockCategories } });
+      
+      render(<CreateCategory />);
       
       await waitFor(() => {
         expect(screen.getByText('Electronics')).toBeInTheDocument();
         expect(screen.getByText('Clothing')).toBeInTheDocument();
-        expect(screen.getByText('Books')).toBeInTheDocument();
       });
     });
 
-    test('handles error when loading categories fails', async () => {
-      axios.get.mockRejectedValue(new Error('Network error'));
-
-      await act(async () => {
-        render(<CreateCategory />);
+    test('should render Edit and Delete buttons for each category', async () => {
+      const mockCategories = [{ _id: '1', name: 'Electronics' }];
+      axios.get.mockResolvedValue({ data: { success: true, category: mockCategories } });
+      
+      render(<CreateCategory />);
+      
+      await waitFor(() => {
+        const editButtons = screen.getAllByText('Edit');
+        const deleteButtons = screen.getAllByText('Delete');
+        expect(editButtons).toHaveLength(1);
+        expect(deleteButtons).toHaveLength(1);
       });
+    });
 
+    test('should not render modal initially', async () => {
+      axios.get.mockResolvedValue({ data: { success: true, category: [] } });
+      
+      render(<CreateCategory />);
+      
+      expect(screen.queryByTestId('modal')).not.toBeInTheDocument();
+    });
+  });
+
+  // ================== COMBINATIONAL TESTING ==================
+  // Testing different combinations of inputs and states
+  
+  describe('Combinational Tests - Different Scenarios', () => {
+    
+    test('should handle successful category creation with valid name', async () => {
+      axios.get.mockResolvedValue({ data: { success: true, category: [] } });
+      axios.post.mockResolvedValue({ data: { success: true } });
+      
+      render(<CreateCategory />);
+      
+      const input = screen.getAllByTestId('category-input')[0];
+      const form = screen.getAllByTestId('category-form')[0];
+      
+      fireEvent.change(input, { target: { value: 'Books' } });
+      fireEvent.submit(form);
+      
+      await waitFor(() => {
+        expect(toast.success).toHaveBeenCalledWith('Books is created');
+      });
+    });
+
+    test('should handle failed category creation with error message', async () => {
+      axios.get.mockResolvedValue({ data: { success: true, category: [] } });
+      axios.post.mockResolvedValue({ data: { success: false, message: 'Category already exists' } });
+      
+      render(<CreateCategory />);
+      
+      const input = screen.getAllByTestId('category-input')[0];
+      const form = screen.getAllByTestId('category-form')[0];
+      
+      fireEvent.change(input, { target: { value: 'Books' } });
+      fireEvent.submit(form);
+      
+      await waitFor(() => {
+        expect(toast.error).toHaveBeenCalledWith('Category already exists');
+      });
+    });
+
+    test('should handle network error during category creation', async () => {
+      axios.get.mockResolvedValue({ data: { success: true, category: [] } });
+      axios.post.mockRejectedValue(new Error('Network error'));
+      
+      render(<CreateCategory />);
+      
+      const input = screen.getAllByTestId('category-input')[0];
+      const form = screen.getAllByTestId('category-form')[0];
+      
+      fireEvent.change(input, { target: { value: 'Books' } });
+      fireEvent.submit(form);
+      
+      await waitFor(() => {
+        expect(toast.error).toHaveBeenCalledWith('somthing went wrong in input form');
+      });
+    });
+
+    test('should handle successful category update', async () => {
+      const mockCategories = [{ _id: '1', name: 'Electronics' }];
+      axios.get.mockResolvedValue({ data: { success: true, category: mockCategories } });
+      axios.put.mockResolvedValue({ data: { success: true } });
+      
+      render(<CreateCategory />);
+      
+      await waitFor(() => {
+        const editButton = screen.getByText('Edit');
+        fireEvent.click(editButton);
+      });
+      
+      const modalInput = screen.getAllByTestId('category-input')[1];
+      const modalForm = screen.getAllByTestId('category-form')[1];
+      
+      fireEvent.change(modalInput, { target: { value: 'Updated Electronics' } });
+      fireEvent.submit(modalForm);
+      
+      await waitFor(() => {
+        expect(toast.success).toHaveBeenCalledWith('Updated Electronics is updated');
+      });
+    });
+
+    test('should handle failed category update', async () => {
+      const mockCategories = [{ _id: '1', name: 'Electronics' }];
+      axios.get.mockResolvedValue({ data: { success: true, category: mockCategories } });
+      axios.put.mockResolvedValue({ data: { success: false, message: 'Update failed' } });
+      
+      render(<CreateCategory />);
+      
+      await waitFor(() => {
+        const editButton = screen.getByText('Edit');
+        fireEvent.click(editButton);
+      });
+      
+      const modalForm = screen.getAllByTestId('category-form')[1];
+      fireEvent.submit(modalForm);
+      
+      await waitFor(() => {
+        expect(toast.error).toHaveBeenCalledWith('Update failed');
+      });
+    });
+
+    test('should handle successful category deletion', async () => {
+      const mockCategories = [{ _id: '1', name: 'Electronics' }];
+      axios.get.mockResolvedValue({ data: { success: true, category: mockCategories } });
+      axios.delete.mockResolvedValue({ data: { success: true } });
+      
+      render(<CreateCategory />);
+      
+      await waitFor(() => {
+        const deleteButton = screen.getByText('Delete');
+        fireEvent.click(deleteButton);
+      });
+      
+      await waitFor(() => {
+        expect(toast.success).toHaveBeenCalledWith('category is deleted');
+      });
+    });
+
+    test('should handle failed category deletion', async () => {
+      const mockCategories = [{ _id: '1', name: 'Electronics' }];
+      axios.get.mockResolvedValue({ data: { success: true, category: mockCategories } });
+      axios.delete.mockResolvedValue({ data: { success: false, message: 'Cannot delete' } });
+      
+      render(<CreateCategory />);
+      
+      await waitFor(() => {
+        const deleteButton = screen.getByText('Delete');
+        fireEvent.click(deleteButton);
+      });
+      
+      await waitFor(() => {
+        expect(toast.error).toHaveBeenCalledWith('Cannot delete');
+      });
+    });
+
+    test('should handle error when fetching categories fails', async () => {
+      axios.get.mockRejectedValue(new Error('Fetch error'));
+      
+      render(<CreateCategory />);
+      
       await waitFor(() => {
         expect(toast.error).toHaveBeenCalledWith('Something wwent wrong in getting catgeory');
       });
     });
   });
 
-  describe('Create Category', () => {
-    test('creates a new category successfully', async () => {
-      const user = userEvent;
+  // ================== STATE-BASED TESTING ==================
+  // Testing component state changes and effects
+  
+  describe('State-Based Tests - State Management', () => {
+    
+    test('should update name state when typing in create form', async () => {
+      axios.get.mockResolvedValue({ data: { success: true, category: [] } });
       
-      await act(async () => {
-        render(<CreateCategory />);
-      });
-
-      const categoryInput = screen.getByTestId('category-input');
-      const submitButton = screen.getByTestId('submit-button');
-
-      await user.type(categoryInput, 'New Category');
-      await user.click(submitButton);
-
-      expect(axios.post).toHaveBeenCalledWith('/api/v1/category/create-category', {
-        name: 'New Category'
-      });
-
-      await waitFor(() => {
-        expect(toast.success).toHaveBeenCalledWith('New Category is created');
-        expect(axios.get).toHaveBeenCalledTimes(2); // Initial load + refresh after create
-      });
-    });
-
-    test('handles create category error', async () => {
-      axios.post.mockRejectedValue(new Error('Create failed'));
-      const user = userEvent;
-
-      await act(async () => {
-        render(<CreateCategory />);
-      });
-
-      const categoryInput = screen.getByTestId('category-input');
-      const submitButton = screen.getByTestId('submit-button');
-
-      await user.type(categoryInput, 'New Category');
-      await user.click(submitButton);
-
-      await waitFor(() => {
-        expect(toast.error).toHaveBeenCalledWith('somthing went wrong in input form');
-      });
-    });
-
-    test('handles create category API error response', async () => {
-      axios.post.mockResolvedValue({
-        data: { success: false, message: 'Category already exists' }
-      });
-      const user = userEvent;
-
-      await act(async () => {
-        render(<CreateCategory />);
-      });
-
-      const categoryInput = screen.getByTestId('category-input');
-      const submitButton = screen.getByTestId('submit-button');
-
-      await user.type(categoryInput, 'Existing Category');
-      await user.click(submitButton);
-
-      await waitFor(() => {
-        expect(toast.error).toHaveBeenCalledWith('Category already exists');
-      });
-    });
-  });
-
-  describe('Update Category', () => {
-    test('opens modal when edit button is clicked', async () => {
-      await act(async () => {
-        render(<CreateCategory />);
-      });
-
-      await waitFor(() => {
-        const editButtons = screen.getAllByText('Edit');
-        fireEvent.click(editButtons[0]);
-      });
-
-      expect(screen.getByTestId('modal')).toBeInTheDocument();
-    });
-
-    test('updates category successfully', async () => {
-      const user = userEvent;
+      render(<CreateCategory />);
       
-      await act(async () => {
-        render(<CreateCategory />);
-      });
-
-      await waitFor(() => {
-        const editButtons = screen.getAllByText('Edit');
-        fireEvent.click(editButtons[0]);
-      });
-
-      const modalInputs = screen.getAllByTestId('category-input');
-      const modalInput = modalInputs.find(input => input.value === 'Electronics');
-      const modalSubmitButtons = screen.getAllByTestId('submit-button');
-      const modalSubmitButton = modalSubmitButtons[1]; // Second button is in modal
-
-      await user.clear(modalInput);
-      await user.type(modalInput, 'Updated Electronics');
-      await user.click(modalSubmitButton);
-
-      expect(axios.put).toHaveBeenCalledWith('/api/v1/category/update-category/1', {
-        name: 'Updated Electronics'
-      });
-
-      await waitFor(() => {
-        expect(toast.success).toHaveBeenCalledWith('Updated Electronics is updated');
-        expect(axios.get).toHaveBeenCalledTimes(2); // Initial load + refresh after update
-      });
+      const input = screen.getAllByTestId('category-input')[0];
+      
+      fireEvent.change(input, { target: { value: 'New Category' } });
+      
+      expect(input.value).toBe('New Category');
     });
 
-    test('handles update category error', async () => {
-      axios.put.mockRejectedValue(new Error('Update failed'));
-      const user = userEvent;
-
-      await act(async () => {
-        render(<CreateCategory />);
-      });
-
+    test('should open modal and set selected category when Edit is clicked', async () => {
+      const mockCategories = [{ _id: '1', name: 'Electronics' }];
+      axios.get.mockResolvedValue({ data: { success: true, category: mockCategories } });
+      
+      render(<CreateCategory />);
+      
       await waitFor(() => {
-        const editButtons = screen.getAllByText('Edit');
-        fireEvent.click(editButtons[0]);
+        const editButton = screen.getByText('Edit');
+        fireEvent.click(editButton);
       });
-
-      const modalInputs = screen.getAllByTestId('category-input');
-      const modalInput = modalInputs.find(input => input.value === 'Electronics');
-      const modalSubmitButtons = screen.getAllByTestId('submit-button');
-      const modalSubmitButton = modalSubmitButtons[1]; // Second button is in modal
-
-      await user.clear(modalInput);
-      await user.type(modalInput, 'Updated Category');
-      await user.click(modalSubmitButton);
-
-      await waitFor(() => {
-        expect(toast.error).toHaveBeenCalledWith('Somtihing went wrong');
-      });
-    });
-
-    test('closes modal when cancel is clicked', async () => {
-      await act(async () => {
-        render(<CreateCategory />);
-      });
-
-      await waitFor(() => {
-        const editButtons = screen.getAllByText('Edit');
-        fireEvent.click(editButtons[0]);
-      });
-
+      
       expect(screen.getByTestId('modal')).toBeInTheDocument();
+      const modalInput = screen.getAllByTestId('category-input')[1];
+      expect(modalInput.value).toBe('Electronics');
+    });
 
+    test('should close modal when cancel button is clicked', async () => {
+      const mockCategories = [{ _id: '1', name: 'Electronics' }];
+      axios.get.mockResolvedValue({ data: { success: true, category: mockCategories } });
+      
+      render(<CreateCategory />);
+      
+      await waitFor(() => {
+        const editButton = screen.getByText('Edit');
+        fireEvent.click(editButton);
+      });
+      
+      expect(screen.getByTestId('modal')).toBeInTheDocument();
+      
       const cancelButton = screen.getByTestId('modal-cancel');
       fireEvent.click(cancelButton);
-
+      
       expect(screen.queryByTestId('modal')).not.toBeInTheDocument();
     });
-  });
 
-  describe('Delete Category', () => {
-    test('deletes category successfully', async () => {
-      await act(async () => {
-        render(<CreateCategory />);
-      });
-
-      await waitFor(() => {
-        const deleteButtons = screen.getAllByText('Delete');
-        fireEvent.click(deleteButtons[0]);
-      });
-
-      expect(axios.delete).toHaveBeenCalledWith('/api/v1/category/delete-category/1');
-
-      await waitFor(() => {
-        expect(toast.success).toHaveBeenCalledWith('category is deleted');
-        expect(axios.get).toHaveBeenCalledTimes(2); // Initial load + refresh after delete
-      });
-    });
-
-    test('handles delete category error', async () => {
-      axios.delete.mockRejectedValue(new Error('Delete failed'));
-
-      await act(async () => {
-        render(<CreateCategory />);
-      });
-
-      await waitFor(() => {
-        const deleteButtons = screen.getAllByText('Delete');
-        fireEvent.click(deleteButtons[0]);
-      });
-
-      await waitFor(() => {
-        expect(toast.error).toHaveBeenCalledWith('Somtihing went wrong');
-      });
-    });
-
-    test('handles delete category API error response', async () => {
-      axios.delete.mockResolvedValue({
-        data: { success: false, message: 'Cannot delete category with products' }
-      });
-
-      await act(async () => {
-        render(<CreateCategory />);
-      });
-
-      await waitFor(() => {
-        const deleteButtons = screen.getAllByText('Delete');
-        fireEvent.click(deleteButtons[0]);
-      });
-
-      await waitFor(() => {
-        expect(toast.error).toHaveBeenCalledWith('Cannot delete category with products');
-      });
-    });
-  });
-
-  describe('Form Interactions', () => {
-    test('updates input value when typing', async () => {
-      const user = userEvent;
+    test('should close modal and reset state after successful update', async () => {
+      const mockCategories = [{ _id: '1', name: 'Electronics' }];
+      axios.get.mockResolvedValue({ data: { success: true, category: mockCategories } });
+      axios.put.mockResolvedValue({ data: { success: true } });
       
-      await act(async () => {
-        render(<CreateCategory />);
-      });
-
-      const categoryInput = screen.getByTestId('category-input');
+      render(<CreateCategory />);
       
-      await user.type(categoryInput, 'Test Category');
-      
-      expect(categoryInput).toHaveValue('Test Category');
-    });
-
-    test('clears form after successful submission', async () => {
-      const user = userEvent;
-      
-      await act(async () => {
-        render(<CreateCategory />);
-      });
-
-      const categoryInput = screen.getByTestId('category-input');
-      const submitButton = screen.getByTestId('submit-button');
-
-      await user.type(categoryInput, 'New Category');
-      await user.click(submitButton);
-
       await waitFor(() => {
-        expect(categoryInput).toHaveValue('');
+        const editButton = screen.getByText('Edit');
+        fireEvent.click(editButton);
       });
-    });
-  });
-
-  describe('Modal State Management', () => {
-    test('sets correct category data when opening edit modal', async () => {
-      await act(async () => {
-        render(<CreateCategory />);
-      });
-
-      await waitFor(() => {
-        const editButtons = screen.getAllByText('Edit');
-        fireEvent.click(editButtons[0]);
-      });
-
-      const modalInputs = screen.getAllByTestId('category-input');
-      const modalInput = modalInputs.find(input => input.value === 'Electronics');
-      expect(modalInput).toHaveValue('Electronics');
-    });
-
-    test('resets modal state after successful update', async () => {
-      const user = userEvent;
       
-      await act(async () => {
-        render(<CreateCategory />);
-      });
-
-      await waitFor(() => {
-        const editButtons = screen.getAllByText('Edit');
-        fireEvent.click(editButtons[0]);
-      });
-
-      const modalInputs = screen.getAllByTestId('category-input');
-      const modalInput = modalInputs.find(input => input.value === 'Electronics');
-      const modalSubmitButtons = screen.getAllByTestId('submit-button');
-      const modalSubmitButton = modalSubmitButtons[1]; // Second button is in modal
-
-      await user.clear(modalInput);
-      await user.type(modalInput, 'Updated Category');
-      await user.click(modalSubmitButton);
-
+      const modalForm = screen.getAllByTestId('category-form')[1];
+      fireEvent.submit(modalForm);
+      
       await waitFor(() => {
         expect(screen.queryByTestId('modal')).not.toBeInTheDocument();
       });
     });
-  });
 
-  describe('Edge Cases', () => {
-    test('handles empty categories list', async () => {
-      axios.get.mockResolvedValue({
-        data: { success: true, category: [] }
-      });
-
-      await act(async () => {
-        render(<CreateCategory />);
-      });
-
+    test('should update updatedName state when typing in modal form', async () => {
+      const mockCategories = [{ _id: '1', name: 'Electronics' }];
+      axios.get.mockResolvedValue({ data: { success: true, category: mockCategories } });
+      
+      render(<CreateCategory />);
+      
       await waitFor(() => {
-        expect(screen.getByText('Name')).toBeInTheDocument();
-        expect(screen.getByText('Actions')).toBeInTheDocument();
-        // Should not have any category rows
-        expect(screen.queryByText('Electronics')).not.toBeInTheDocument();
+        const editButton = screen.getByText('Edit');
+        fireEvent.click(editButton);
+      });
+      
+      const modalInput = screen.getAllByTestId('category-input')[1];
+      fireEvent.change(modalInput, { target: { value: 'Modified Name' } });
+      
+      expect(modalInput.value).toBe('Modified Name');
+    });
+
+    test('should refetch categories after successful creation', async () => {
+      axios.get.mockResolvedValueOnce({ data: { success: true, category: [] } });
+      axios.post.mockResolvedValue({ data: { success: true } });
+      axios.get.mockResolvedValueOnce({ 
+        data: { success: true, category: [{ _id: '1', name: 'Books' }] } 
+      });
+      
+      render(<CreateCategory />);
+      
+      const input = screen.getAllByTestId('category-input')[0];
+      const form = screen.getAllByTestId('category-form')[0];
+      
+      fireEvent.change(input, { target: { value: 'Books' } });
+      fireEvent.submit(form);
+      
+      await waitFor(() => {
+        expect(axios.get).toHaveBeenCalledTimes(2);
       });
     });
 
-    test('handles undefined categories response', async () => {
-      axios.get.mockResolvedValue({
-        data: { success: true, category: undefined }
+    test('should refetch categories after successful deletion', async () => {
+      const mockCategories = [{ _id: '1', name: 'Electronics' }];
+      axios.get.mockResolvedValueOnce({ data: { success: true, category: mockCategories } });
+      axios.delete.mockResolvedValue({ data: { success: true } });
+      axios.get.mockResolvedValueOnce({ data: { success: true, category: [] } });
+      
+      render(<CreateCategory />);
+      
+      await waitFor(() => {
+        const deleteButton = screen.getByText('Delete');
+        fireEvent.click(deleteButton);
       });
-
-      await act(async () => {
-        render(<CreateCategory />);
+      
+      await waitFor(() => {
+        expect(axios.get).toHaveBeenCalledTimes(2);
       });
+    });
+  });
 
-      // Component should not crash
-      expect(screen.getByText('Manage Category')).toBeInTheDocument();
+  // ================== COMMUNICATION TESTING ==================
+  // Testing API calls and component interactions
+  
+  describe('Communication Tests - API Interactions', () => {
+    
+    test('should call getAllCategory on component mount', async () => {
+      axios.get.mockResolvedValue({ data: { success: true, category: [] } });
+      
+      render(<CreateCategory />);
+      
+      await waitFor(() => {
+        expect(axios.get).toHaveBeenCalledWith('/api/v1/category/get-category');
+      });
+    });
+
+    test('should call create category API with correct payload', async () => {
+      axios.get.mockResolvedValue({ data: { success: true, category: [] } });
+      axios.post.mockResolvedValue({ data: { success: true } });
+      
+      render(<CreateCategory />);
+      
+      const input = screen.getAllByTestId('category-input')[0];
+      const form = screen.getAllByTestId('category-form')[0];
+      
+      fireEvent.change(input, { target: { value: 'Books' } });
+      fireEvent.submit(form);
+      
+      await waitFor(() => {
+        expect(axios.post).toHaveBeenCalledWith(
+          '/api/v1/category/create-category',
+          { name: 'Books' }
+        );
+      });
+    });
+
+    test('should call update category API with correct payload and ID', async () => {
+      const mockCategories = [{ _id: '123', name: 'Electronics' }];
+      axios.get.mockResolvedValue({ data: { success: true, category: mockCategories } });
+      axios.put.mockResolvedValue({ data: { success: true } });
+      
+      render(<CreateCategory />);
+      
+      await waitFor(() => {
+        const editButton = screen.getByText('Edit');
+        fireEvent.click(editButton);
+      });
+      
+      const modalInput = screen.getAllByTestId('category-input')[1];
+      const modalForm = screen.getAllByTestId('category-form')[1];
+      
+      fireEvent.change(modalInput, { target: { value: 'Updated' } });
+      fireEvent.submit(modalForm);
+      
+      await waitFor(() => {
+        expect(axios.put).toHaveBeenCalledWith(
+          '/api/v1/category/update-category/123',
+          { name: 'Updated' }
+        );
+      });
+    });
+
+    test('should call delete category API with correct ID', async () => {
+      const mockCategories = [{ _id: '456', name: 'Electronics' }];
+      axios.get.mockResolvedValue({ data: { success: true, category: mockCategories } });
+      axios.delete.mockResolvedValue({ data: { success: true } });
+      
+      render(<CreateCategory />);
+      
+      await waitFor(() => {
+        const deleteButton = screen.getByText('Delete');
+        fireEvent.click(deleteButton);
+      });
+      
+      await waitFor(() => {
+        expect(axios.delete).toHaveBeenCalledWith('/api/v1/category/delete-category/456');
+      });
+    });
+
+    test('should show success toast after successful creation', async () => {
+      axios.get.mockResolvedValue({ data: { success: true, category: [] } });
+      axios.post.mockResolvedValue({ data: { success: true } });
+      
+      render(<CreateCategory />);
+      
+      const input = screen.getAllByTestId('category-input')[0];
+      const form = screen.getAllByTestId('category-form')[0];
+      
+      fireEvent.change(input, { target: { value: 'Toys' } });
+      fireEvent.submit(form);
+      
+      await waitFor(() => {
+        expect(toast.success).toHaveBeenCalledWith('Toys is created');
+        expect(toast.success).toHaveBeenCalledTimes(1);
+      });
+    });
+
+    test('should show success toast after successful update', async () => {
+      const mockCategories = [{ _id: '1', name: 'Electronics' }];
+      axios.get.mockResolvedValue({ data: { success: true, category: mockCategories } });
+      axios.put.mockResolvedValue({ data: { success: true } });
+      
+      render(<CreateCategory />);
+      
+      await waitFor(() => {
+        const editButton = screen.getByText('Edit');
+        fireEvent.click(editButton);
+      });
+      
+      const modalInput = screen.getAllByTestId('category-input')[1];
+      const modalForm = screen.getAllByTestId('category-form')[1];
+      
+      fireEvent.change(modalInput, { target: { value: 'NewName' } });
+      fireEvent.submit(modalForm);
+      
+      await waitFor(() => {
+        expect(toast.success).toHaveBeenCalledWith('NewName is updated');
+      });
+    });
+
+    test('should show success toast after successful deletion', async () => {
+      const mockCategories = [{ _id: '1', name: 'Electronics' }];
+      axios.get.mockResolvedValue({ data: { success: true, category: mockCategories } });
+      axios.delete.mockResolvedValue({ data: { success: true } });
+      
+      render(<CreateCategory />);
+      
+      await waitFor(() => {
+        const deleteButton = screen.getByText('Delete');
+        fireEvent.click(deleteButton);
+      });
+      
+      await waitFor(() => {
+        expect(toast.success).toHaveBeenCalledWith('category is deleted');
+      });
+    });
+
+    test('should log error to console when creation fails', async () => {
+      const consoleLogSpy = jest.spyOn(console, 'log').mockImplementation();
+      const error = new Error('Network error');
+      
+      axios.get.mockResolvedValue({ data: { success: true, category: [] } });
+      axios.post.mockRejectedValue(error);
+      
+      render(<CreateCategory />);
+      
+      const input = screen.getAllByTestId('category-input')[0];
+      const form = screen.getAllByTestId('category-form')[0];
+      
+      fireEvent.change(input, { target: { value: 'Books' } });
+      fireEvent.submit(form);
+      
+      await waitFor(() => {
+        expect(consoleLogSpy).toHaveBeenCalledWith(error);
+      });
+      
+      consoleLogSpy.mockRestore();
+    });
+
+    test('should handle multiple rapid delete requests', async () => {
+      const mockCategories = [
+        { _id: '1', name: 'Electronics' },
+        { _id: '2', name: 'Clothing' }
+      ];
+      axios.get.mockResolvedValue({ data: { success: true, category: mockCategories } });
+      axios.delete.mockResolvedValue({ data: { success: true } });
+      
+      render(<CreateCategory />);
+      
+      await waitFor(() => {
+        const deleteButtons = screen.getAllByText('Delete');
+        fireEvent.click(deleteButtons[0]);
+        fireEvent.click(deleteButtons[1]);
+      });
+      
+      await waitFor(() => {
+        expect(axios.delete).toHaveBeenCalledTimes(2);
+      });
     });
   });
 });
