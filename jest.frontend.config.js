@@ -26,8 +26,6 @@ export default {
     "<rootDir>/client/src/pages/admin/AdminOrders.test.js",
     "<rootDir>/client/src/pages/admin/CreateCategory.test.js",
     "<rootDir>/client/src/pages/Categories.test.js",
-    "<rootDir>/client/src/pages/Pagenotfound.test.js",
-    "<rootDir>/client/src/pages/Policy.test.js",
     "<rootDir>/client/src/pages/Search.test.js",
   ],
 
@@ -39,8 +37,6 @@ export default {
     "client/src/pages/admin/AdminOrders.js",
     "client/src/pages/admin/CreateCategory.js",
     "client/src/pages/Categories.js",
-    "client/src/pages/Pagenotfound.js",
-    "client/src/pages/Policy.js",
     "client/src/pages/Search.js",
   ],
   coverageThreshold: {

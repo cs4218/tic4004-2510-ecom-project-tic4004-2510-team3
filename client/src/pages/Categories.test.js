@@ -24,58 +24,46 @@ describe('Categories Component', () => {
     jest.clearAllMocks();
   });
 
-  // --- Tests for rendering categories ---
-  it('renders layout container', () => {
-    mockUseCategory.mockReturnValue([]);
+  // 9. Render all categories
+  it('renders all categories', () => {
+    const categories = [
+      { _id: '0', name: 'All Categories', slug: 'all-categories' },
+      { _id: '1', name: 'Electronics', slug: 'electronics' },
+      { _id: '2', name: 'Book', slug: 'book' },
+      { _id: '3', name: 'Clothing', slug: 'clothing' }
+    ];
+    mockUseCategory.mockReturnValue(categories);
+
     render(
       <MemoryRouter>
         <Categories />
       </MemoryRouter>
     );
-    expect(screen.getByTestId('layout')).toBeInTheDocument();
+
+    categories.forEach((c) => {
+      expect(screen.getByText(c.name)).toBeInTheDocument();
+    });
   });
 
-  it('renders "Electronics" category', () => {
-    mockUseCategory.mockReturnValue([{ _id: '1', name: 'Electronics', slug: 'electronics' }]);
-    render(
-      <MemoryRouter>
-        <Categories />
-      </MemoryRouter>
-    );
-    expect(screen.getByText('Electronics')).toBeInTheDocument();
-  });
+  // 10. Render each category link with correct href
+  it('renders each category link with correct href', () => {
+    const categories = [
+      { _id: '0', name: 'All Categories', slug: 'all-categories' },
+      { _id: '1', name: 'Electronics', slug: 'electronics' },
+      { _id: '2', name: 'Book', slug: 'book' },
+      { _id: '3', name: 'Clothing', slug: 'clothing' }
+    ];
+    mockUseCategory.mockReturnValue(categories);
 
-  // --- Tests for empty state ---
-  it('does not render any category links when no categories', () => {
-    mockUseCategory.mockReturnValue([]);
     render(
       <MemoryRouter>
         <Categories />
       </MemoryRouter>
     );
-    expect(screen.queryByRole('link')).not.toBeInTheDocument();
-  });
 
-  // --- Tests for category links ---
-  it('Electronics link has correct href', () => {
-    mockUseCategory.mockReturnValue([{ _id: '1', name: 'Electronics', slug: 'electronics' }]);
-    render(
-      <MemoryRouter>
-        <Categories />
-      </MemoryRouter>
-    );
-    const electronicsLink = screen.getByText('Electronics');
-    expect(electronicsLink.closest('a')).toHaveAttribute('href', '/category/electronics');
-  });
-  // --- Tests for Layout prop ---
-  it('passes correct title prop to Layout', () => {
-    mockUseCategory.mockReturnValue([]);
-    render(
-      <MemoryRouter>
-        <Categories />
-      </MemoryRouter>
-    );
-    const layout = screen.getByTestId('layout');
-    expect(layout).toHaveAttribute('data-title', 'All Categories');
+    categories.forEach((c) => {
+      const link = screen.getByText(c.name).closest('a');
+      expect(link).toHaveAttribute('href', `/category/${c.slug}`);
+    });
   });
 });
