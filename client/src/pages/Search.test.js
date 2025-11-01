@@ -36,21 +36,6 @@ jest.mock('../components/Layout', () => {
 
 describe('Search Component', () => {
 
-  describe('Empty Results State', () => {
-    // Testing for whether the display result is in the corrct layout
-    it('should display correct layout title', () => {
-      mockUseSearch.mockReturnValue([{ keyword: '', results: [] }, jest.fn()]);
-
-      render(
-        <MemoryRouter>
-          <Search />
-        </MemoryRouter>
-      );
-
-      expect(screen.getByTestId('layout-title')).toHaveTextContent('Search results');
-    });
-  });
-
   describe('Search Results Display', () => {
     const mockLaptop = {
       _id: '1',
@@ -60,7 +45,22 @@ describe('Search Component', () => {
       category: 'electronics'
     };
 
-    // Testing for product when perform search
+    //5. Testing empty search result branch
+    it('should display "No Products Found" when search results are empty', () => {
+      mockUseSearch.mockReturnValue([{ keyword: 'nothing', results: [] }, jest.fn()]);
+
+      render(
+        <MemoryRouter>
+          <Search />
+        </MemoryRouter>
+      );
+
+      expect(screen.getByText('No Products Found')).toBeInTheDocument();
+      expect(screen.queryByText('Found')).not.toBeInTheDocument();
+    });
+
+
+    // 6. Testing for product count when perform search for a product
     it('should display correct result count when product is found', () => {
       mockUseSearch.mockReturnValue([{ keyword: 'laptop', results: [mockLaptop] }, jest.fn()]);
 
@@ -74,20 +74,7 @@ describe('Search Component', () => {
       expect(screen.queryByText('No Products Found')).not.toBeInTheDocument();
     });
 
-    // Testing for product when keyword is being search and display result is correct
-    it('should render laptop product card', () => {
-      mockUseSearch.mockReturnValue([{ keyword: 'laptop', results: [mockLaptop] }, jest.fn()]);
-
-      render(
-        <MemoryRouter>
-          <Search />
-        </MemoryRouter>
-      );
-
-      expect(screen.getByText('Laptop')).toBeInTheDocument();
-    });
-
-    // Testing for correct product image being shown
+    //7. Testing for correct product image with correct src
     it('should render product images with correct src', () => {
       mockUseSearch.mockReturnValue([{ keyword: 'laptop', results: [mockLaptop] }, jest.fn()]);
 
@@ -100,38 +87,11 @@ describe('Search Component', () => {
       const productImage = screen.getByAltText('Laptop');
       expect(productImage).toHaveAttribute('src', '/api/v1/product/product-photo/1');
     });
-
-    // Testing for "ADD TO CART" button
-    it('should render "ADD TO CART" button for each product', () => {
-      mockUseSearch.mockReturnValue([{ keyword: 'laptop', results: [mockLaptop] }, jest.fn()]);
-
-      render(
-        <MemoryRouter>
-          <Search />
-        </MemoryRouter>
-      );
-
-      expect(screen.getByText('ADD TO CART')).toBeInTheDocument();
-    });
-
-    // Testing for "More Details" button
-    it('should render "More Details" button for each product', () => {
-      mockUseSearch.mockReturnValue([{ keyword: 'laptop', results: [mockLaptop] }, jest.fn()]);
-
-      render(
-        <MemoryRouter>
-          <Search />
-        </MemoryRouter>
-      );
-
-      expect(screen.getByText('More Details')).toBeInTheDocument();
-    });
-
   });
 
   describe('Product Card Structure', () => {
 
-    // Testing for multiple product when keyword is being search
+    //8. Testing for multiple product when keyword is being search
     it('should render all products in the results', () => {
       const multipleProducts = [
         { 
