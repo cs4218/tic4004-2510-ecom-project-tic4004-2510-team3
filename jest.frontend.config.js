@@ -21,23 +21,19 @@ export default {
 
   // only run these tests
   testMatch: ["<rootDir>/client/src/pages/Auth/*.test.js", 
-    "<rootDir>/client/src/context/cart.test.js",
+    "<rootDir>/client/src/context/*.test.js",
     "<rootDir>/client/src/pages/admin/AdminDashboard.test.js",
     "<rootDir>/client/src/pages/admin/AdminOrders.test.js",
     "<rootDir>/client/src/pages/admin/CreateCategory.test.js",
-    "<rootDir>/client/src/pages/Categories.test.js",
-    "<rootDir>/client/src/pages/Search.test.js",
   ],
 
   // jest code coverage
   collectCoverage: true,
   collectCoverageFrom: ["client/src/pages/Auth/**", 
-    "client/src/context/cart.js",
+    "client/src/context/**",
     "client/src/pages/admin/AdminDashboard.js", 
     "client/src/pages/admin/AdminOrders.js",
     "client/src/pages/admin/CreateCategory.js",
-    "client/src/pages/Categories.js",
-    "client/src/pages/Search.js",
   ],
   coverageThreshold: {
     global: {
