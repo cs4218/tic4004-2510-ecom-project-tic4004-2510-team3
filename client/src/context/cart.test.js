@@ -1,123 +1,71 @@
-import React from "react";
-import { render, fireEvent } from "@testing-library/react";
+import { renderHook, act } from "@testing-library/react";
 import { CartProvider, useCart } from "./cart";
-import "@testing-library/jest-dom/extend-expect";
 
 // Mock localStorage
-Object.defineProperty(window, "localStorage", {
-  value: {
-    setItem: jest.fn(),
-    getItem: jest.fn(),
-    removeItem: jest.fn(),
-    clear: jest.fn(),
-  },
-  writable: true,
-});
+Storage.prototype.getItem = jest.fn();
+Storage.prototype.setItem = jest.fn();
+Storage.prototype.removeItem = jest.fn();
 
-// Test component to interact with cart for single-item adding
-const TestComponent = () => {
-  const [cart, setCart] = useCart();
-
-  return (
-    <>
-      <div data-testid="cart-json">{JSON.stringify(cart)}</div>
-      <button
-        onClick={() =>
-          setCart([{ id: 3, name: "Keyboard", price: 400, qty: 1 }])
-        }
-      >
-        Add Keyboard
-      </button>
-    </>
-  );
-};
-
-// Test component for multiple-item adding
-const TestMultipleItems = () => {
-  const [cart, setCart] = useCart();
-
-  return (
-    <>
-      <div data-testid="cart-json">{JSON.stringify(cart)}</div>
-      <button
-        onClick={() =>
-          setCart((prev) => [...prev, { id: 3, name: "Keyboard", price: 400, qty: 1 }])
-        }
-      >
-        Add Keyboard
-      </button>
-      <button
-        onClick={() =>
-          setCart((prev) => [...prev, { id: 4, name: "Mouse", price: 100, qty: 2 }])
-        }
-      >
-        Add Mouse
-      </button>
-    </>
-  );
-};
-
-describe("Cart Context (UI-Style Test)", () => {
+describe("Cart State & Managament Testing", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    localStorage.clear();
   });
 
-  // 1.Testing for default cart state. It should be empty
-  it("shows empty cart by default", () => {
-    const { getByTestId } = render(
-      <CartProvider>
-        <TestComponent />
-      </CartProvider>
-    );
-    expect(getByTestId("cart-json").textContent).toBe("[]");
+  // 4. Test on empty cart state. 
+  it("should initialize with empty cart if localStorage is empty", () => {
+    Storage.prototype.getItem.mockReturnValueOnce(null);
+
+    const { result } = renderHook(() => useCart(), { wrapper: CartProvider });
+    const [cart] = result.current;
+
+    expect(cart).toEqual([]);
   });
 
-  // 2. Loads existing cart items from localStorage everythime when app re-open and the cart item sld be remain if we never remove
-  it("loads cart data from localStorage", () => {
-    const mockCart = [
-      { id: 1, name: "Laptop", price: 2200, qty: 1 },
-      { id: 2, name: "Mouse", price: 100, qty: 2 },
-    ];
-    localStorage.getItem.mockReturnValueOnce(JSON.stringify(mockCart));
+  //5. Test on load the cart correctly into state when localstroga had save cart
+  it("should load existing cart from localStorage, if localStorage has saved cart", () => {
+    const mockCart = [{ id: 1, name: "Laptop", price: 2200, qty: 1 }];
+    Storage.prototype.getItem.mockReturnValueOnce(JSON.stringify(mockCart));
 
-    const { getByTestId } = render(
-      <CartProvider>
-        <TestComponent />
-      </CartProvider>
-    );
-    expect(getByTestId("cart-json").textContent).toBe(JSON.stringify(mockCart));
+    const { result } = renderHook(() => useCart(), { wrapper: CartProvider });
+    const [cart] = result.current;
+
+    expect(cart).toEqual(mockCart);
   });
 
-  // 3. Update cart with a single item adding
-  it("updates cart when setCart is called", () => {
-    const { getByText, getByTestId } = render(
-      <CartProvider>
-        <TestComponent />
-      </CartProvider>
-    );
-    fireEvent.click(getByText("Add Keyboard"));
-    expect(getByTestId("cart-json").textContent).toBe(
-      JSON.stringify([{ id: 3, name: "Keyboard", price: 400, qty: 1 }])
-    );
+ 
+  // 6. Test on add 1 item to the cart 
+  it("should add a single item to the cart", () => {
+    const { result } = renderHook(() => useCart(), { wrapper: CartProvider });
+
+    act(() => {
+      const [, setCart] = result.current;
+      setCart([{ id: 2, name: "Keyboard", price: 400, qty: 1 }]);
+    });
+
+    const [cart] = result.current;
+    expect(cart).toEqual([{ id: 2, name: "Keyboard", price: 400, qty: 1 }]);
   });
 
-  // 4. Add multiple items sequentially
-  it("adds multiple items to the cart correctly", () => {
-    const { getByText, getByTestId } = render(
-      <CartProvider>
-        <TestMultipleItems />
-      </CartProvider>
-    );
+  //7. Test on several item adding at once (Domain testing)
+  it("should allow adding multiple items without limit (domain test)", () => {
+    const { result } = renderHook(() => useCart(), { wrapper: CartProvider });
 
-    fireEvent.click(getByText("Add Keyboard"));
-    fireEvent.click(getByText("Add Mouse"));
+    act(() => {
+      const [, setCart] = result.current;
+      setCart([]);
+    });
 
-    expect(getByTestId("cart-json").textContent).toBe(
-      JSON.stringify([
-        { id: 3, name: "Keyboard", price: 400, qty: 1 },
-        { id: 4, name: "Mouse", price: 100, qty: 2 },
-      ])
-    );
+    act(() => {
+      const [, setCart] = result.current;
+      setCart((prev) => [
+        ...prev,
+        { id: 1, name: "Laptop", price: 2200, qty: 1 },
+        { id: 2, name: "Keyboard", price: 400, qty: 1 },
+        { id: 3, name: "Mouse", price: 100, qty: 2 },
+      ]);
+    });
+
+    const [cart] = result.current;
+    expect(cart.length).toBe(3);
   });
 });
