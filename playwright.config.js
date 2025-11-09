@@ -13,4 +13,5 @@ module.exports = defineConfig({
     reuseExistingServer: process.env.CI ? false : true,
     timeout: 120000,
   },
+  reporter: [['html', { outputFolder: 'playwright-report' }]], // <- add this
 });
