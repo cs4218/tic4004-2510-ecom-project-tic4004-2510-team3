@@ -54,7 +54,7 @@ jobs:
         with:
           name: coverage-${{ matrix.name }}
           path: coverage
-          
+
   e2e-playwright:
     name: Playwright E2E
     runs-on: ubuntu-latest
@@ -88,11 +88,6 @@ jobs:
 
       - name: Install Playwright browsers
         run: npx playwright install --with-deps
-
-      # 🧠 Optional: seed or initialize your database before tests
-      - name: Seed MongoDB test data
-        run: node scripts/seed.js
-        if: ${{ env.MONGODB_URI != '' }}
 
       # 🏃 Start your app before running Playwright
       - name: Start app
