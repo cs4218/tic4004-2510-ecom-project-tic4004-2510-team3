@@ -13,7 +13,11 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        script: ["test:backend","test:frontend"]
+        include:
+          - name: backend
+            script: "test:backend"
+          - name: frontend
+            script: "test:frontend"
 
     steps:
       - name: Checkout repository
@@ -37,14 +41,14 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Run ${ { matrix.script } }
+      - name: Run ${{ matrix.script }}
         run: npm run ${{ matrix.script }}
 
       - name: Upload coverage artifact
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: coverage-${{ matrix.script }}
+          name: coverage-${{ matrix.name }}
           path: coverage
 
   e2e-playwright:
