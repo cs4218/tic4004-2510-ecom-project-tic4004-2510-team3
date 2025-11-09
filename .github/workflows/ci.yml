@@ -54,10 +54,13 @@ jobs:
         with:
           name: coverage-${{ matrix.name }}
           path: coverage
-
+          
   e2e-playwright:
     name: Playwright E2E
     runs-on: ubuntu-latest
+    env:
+      MONGODB_URI: ${{ secrets.MONGODB_URI }} # Add this secret in GitHub
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -85,6 +88,18 @@ jobs:
 
       - name: Install Playwright browsers
         run: npx playwright install --with-deps
+
+      # 🧠 Optional: seed or initialize your database before tests
+      - name: Seed MongoDB test data
+        run: node scripts/seed.js
+        if: ${{ env.MONGODB_URI != '' }}
+
+      # 🏃 Start your app before running Playwright
+      - name: Start app
+        run: npm run start:test &
+      
+      - name: Wait for app to be ready
+        run: npx wait-on http://localhost:3000
 
       - name: Run Playwright tests
         run: npx playwright test
