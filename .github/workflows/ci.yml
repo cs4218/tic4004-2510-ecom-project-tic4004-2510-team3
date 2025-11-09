@@ -41,6 +41,10 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Install client dependencies (needed for frontend tests)
+        if: ${{ matrix.name == 'frontend' }}
+        run: npm ci --prefix ./client
+
       - name: Run ${{ matrix.script }}
         run: npm run ${{ matrix.script }}
 
